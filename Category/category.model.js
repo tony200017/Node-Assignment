@@ -1,7 +1,17 @@
 const mongoose = require('mongoose');
+const config = require('../config.js');
+
+
 const Schema = mongoose.Schema;
 const categorySchema = Schema({
-    name:{type:String,required:true}, 
-    description:{type:String,required:true}}, 
+    name:String, 
+    description:String,
+    createdByRef: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    updatedByRef: { type: mongoose.Schema.Types.ObjectId, ref: 'User'}}, 
     { timestamps: true });
-module.exports = mongoose.model('Category',categorySchema);
+
+    categorySchema.index({createdByRef:1});
+    categorySchema.index({updatedByRef:1});
+
+
+module.exports = mongoose.model(config.tableNames.category,categorySchema);

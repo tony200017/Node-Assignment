@@ -1,10 +1,22 @@
-const dbconnection = require('./config.js');
-const category = require('./Category/category.service.js');
-const album = require('./Albums/album.service.js');
-const song = require('./Song/song.service.js');
-
+///
 const mongoose = require('mongoose');
-const Album = require('./Albums/album.model.js');
+const express = require('express');
+const bodyParser = require('body-parser');
+
+//get different routes
+const categoryRoutes = require('./category/category.routes.js');
+const albumRoutes = require('./album/album.routes.js');
+const songRoutes = require('./song/song.routes.js');
+const userRoutes = require('./user/user.routes.js');
+//get the connection string
+const dbconnection = require('./config.js');
+
+//get service for test function
+const category = require('./category/category.service.js');
+const album = require('./album/album.service.js');
+const song = require('./song/song.service.js');
+
+const app =express();
 
 
 async function connectToDatabase() {
@@ -15,46 +27,35 @@ async function connectToDatabase() {
       console.error(err);
     }
   }
-  
- 
-  
- 
- 
 async function testCase() {
   try {
 
      await connectToDatabase();
-     await category.addCategory({name:'Pop' ,description:'description1'});
-     await category.addCategory({name:'Jazz' ,description:'description2'});
+     const popCategoryId = await category.addCategory({name:'Pop' ,description:'description1'});
+     const jazzCategoryId=await category.addCategory({name:'Jazz' ,description:'description2'});
 
      
 
-     await album.addAlbum({name:'My Album', description:'description', showNbTracks:true});
-     await album.addAlbum({name:'Temp Album', description:'description'});
-     await album.getAlbums();
+     const myAlbumId = await album.addAlbum({name:'My Album', description:'description', showNbTracks:true});
+     const tempAlbumId =await album.addAlbum({name:'Temp Album', description:'description'});
+    // console.log(await album.getAlbums());
      
-    //get id of the album and the category
-     const myAlbumId=await album.getAlbumIdByName('My Album');
-    const tempAlbumId=await album.getAlbumIdByName('Temp Album');
-    const popCategoryId=await category.getCategoryIdByName("Pop");
-    const jazzCategoryId=await category.getCategoryIdByName("Jazz");
+    
 
     //add the songs the album will update the lastSongAddedAt field by itself
-       await song.addSong({name:'song1', singer:'john',category: popCategoryId,album:myAlbumId});
-       await song.addSong({name:'song2', singer:'john',category: popCategoryId,album:myAlbumId});
-       await song.addSong({name:'song3', singer:'john',category: popCategoryId,album:myAlbumId});
+      // await song.addSong({name:'song1', singer:'john',categoryId: popCategoryId,albumId:myAlbumId});
+      // await song.addSong({name:'song2', singer:'john',categoryId: popCategoryId,albumId:myAlbumId});
+      // const latestsongId =  await song.addSong({name:'song3', singer:'john',categoryId: popCategoryId,albumId:myAlbumId});
 
-       await song.addSong({name:'song4', singer:'john',category: jazzCategoryId,album:tempAlbumId});
-       await song.addSong({name:'song5', singer:'john',category: jazzCategoryId,album:tempAlbumId});
-       await song.addSong({name:'song6', singer:'john',category: jazzCategoryId,album:tempAlbumId});
+       await song.addSong({name:'song4', singer:'john',categoryId: jazzCategoryId,albumId:tempAlbumId});
+       await song.addSong({name:'song5', singer:'john',categoryId: jazzCategoryId,albumId:tempAlbumId});
+       await song.addSong({name:'song6', singer:'john',categoryId: jazzCategoryId,albumId:tempAlbumId});
     //delete the latest song of my album
-     const latestsongId = await song.getSongIdByName("song3");
-     await song.deleteSongById(latestsongId);
-    // await album.deleteLatestSongWithAlbumId(myAlbumId);
-    //all the song of the album will be deleted
-    await album.deleteAlbum(tempAlbumId);
-    await album.updateAlbum(myAlbumId,{description:'updated description'});
-    await album.getAlbums();
+    // await song.deleteSongById(latestsongId);
+    //delete album
+    //await album.deleteAlbum(tempAlbumId);
+   // console.log(await album.getAlbums());
+
 
 
 
@@ -67,5 +68,20 @@ async function testCase() {
   
 
 
-testCase();
+//testCase();
+connectToDatabase();
+app.use(bodyParser.json()); // application/json
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
+app.use('/categories',categoryRoutes);
+app.use('/albums',albumRoutes);
+app.use('/songs',songRoutes);
+app.use('/users',userRoutes);
+
+
+app.listen(3000,()=>{console.log("server started")});

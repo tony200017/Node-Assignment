@@ -1,24 +1,25 @@
-const Song = require('../Song/song.model')
-const Album = require('../Albums/album.model')
+const Song = require('./song.model')
+//const updateAlbum = require('../album/album.service').updateAlbum;
+const AlbumService = require('../album/album.service');
+const CategoryService = require('../category/category.service');
 
 const addSong = async (songData) => {
-    try {
-      //const { name, singer, categoryId, albumId } = songData;
-      //const song = new Song({ name, singer, category: categoryId, album: albumId });
+    
       const song = new Song(songData);
-
+      await CategoryService.getCategoryById(song.categoryId);
+      const album = await AlbumService.updateAlbum(song.albumId,{ lastSongAddedAt: song.createdAt });
+      
+      // if(!album){
+      //   throw new Error("the album id you send doesn't belong to an album");
+      // }
       await song.save();
-
-      await Album.findByIdAndUpdate(song.album, { lastSongAddedAt: song.createdAt });
-
       console.log('song added successfully');
-    } catch (error) {
-      console.error('Error adding category:', error);
-    }
+      return song._id;
+    
   };
 
 const deleteSongById = async (songId)=> {
-    try {
+    
       // Find the song by its ID and remove it
       const deletedSong = await Song.findById(songId);
       
@@ -27,32 +28,42 @@ const deleteSongById = async (songId)=> {
       }
       await deletedSong.deleteOne();
       console.log('Song deleted successfully');
-    } catch (error) {
-      console.error('Error deleting song:', error);
-    }
+    
   }
 
-//extra functions
-  const getSongIdByName = async (songName) => {
-    try {
-      // Query the database for the song with the given name
-      const song = await Song.findOne({ name: songName });
-  
-      // If the song exists, return its ID
-      if (song) {
-        return song._id;
-      } else {
-        console.error('song not found');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error retrieving song ID:', error);
-      return null;
+  const hasSong = async (albumId)=> {
+    
+    // Find the song by its ID and remove it
+    const song = await Song.findOne({ albumId: albumId });
+    
+    if (!song) {
+     return false;
     }
-  };
+    return true;
+  
+}
 
+
+const getSongsbyAlbumId = async (param)=> {
+  const albumId = param.albumId;
+  const categoryId = param.categoryId;
+
+  let query = { albumId: albumId };
+        if (categoryId) {
+            query.categoryId = categoryId;
+        }
+  await AlbumService.getAlbumById(albumId);
+  const songs = await Song.find(query).sort({ createdAt: -1 });
+  
+  if (songs.length===0) {
+   throw new Error('no songs for this album');
+  }
+  return songs;
+
+}
 
   module.exports.addSong = addSong;
   module.exports.deleteSongById = deleteSongById;
+  module.exports.getSongsbyAlbumId = getSongsbyAlbumId;
 
-  module.exports.getSongIdByName = getSongIdByName;
+  module.exports.hasSong = hasSong;

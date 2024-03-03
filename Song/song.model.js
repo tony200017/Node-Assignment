@@ -1,14 +1,17 @@
 const mongoose = require('mongoose');
+const config = require('../config.js');
+
 const songSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    singer: { type: String, required: true },
-    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    album: { type: mongoose.Schema.Types.ObjectId, ref: 'Album', required: true },
+    name:  String,
+    singer:  String,
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+    albumId: { type: mongoose.Schema.Types.ObjectId, ref: 'Album'},
   }, { timestamps: true });
   
- 
+ songSchema.index({categoryId:1});
+ songSchema.index({albumId:1});
 
 
-  const Song = mongoose.model('Song', songSchema);
+  const Song = mongoose.model(config.tableNames.song, songSchema);
   
   module.exports = Song;
